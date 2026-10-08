@@ -4,6 +4,8 @@ import { keywordMatch } from '../lib/analytics'
 import { daysBetween, formatDay, timestamp, today } from '../lib/dates'
 import { uid } from '../lib/id'
 import { navigate } from '../lib/router'
+import { formatShare, normalizeSkill } from '../lib/market'
+import { useMarket } from '../lib/marketStore'
 import { useStore } from '../lib/store'
 import { STAGES, type Job, type JobEvent, type JobEventType, type Stage } from '../lib/types'
 
@@ -188,6 +190,9 @@ function JobEditor({
   const [event, setEvent] = useState<JobEvent>({ id: '', date: today(), type: 'note', note: '' })
   const set = <K extends keyof Job>(key: K, value: Job[K]) => setForm((f) => ({ ...f, [key]: value }))
   const match = form.description ? keywordMatch(form.description, state.skills) : null
+  const { market } = useMarket()
+  const inPosting = market && form.description ? market.mentionedIn(form.description) : []
+  const yours = new Set(state.skills.map((s) => normalizeSkill(s.name)))
 
   const save = () =>
     onSave({
@@ -252,7 +257,24 @@ function JobEditor({
         <Field label="Job description" hint="Paste the whole posting. The assistant works from it.">
           <textarea className="input" rows={6} value={form.description} onChange={(e) => set('description', e.target.value)} />
         </Field>
-        {match && state.skills.length > 0 && (
+        {inPosting.length > 0 ? (
+          <div className="market-check">
+            <span className="muted small">Skills in this posting, and how often the market asks for them:</span>
+            <div className="tags">
+              {inPosting.map((s) => {
+                const have = yours.has(normalizeSkill(s.skill))
+                return (
+                  <span key={s.skill} className={`tag ${have ? 'tag-good' : 'tag-gap'}`} title={have ? 'On your skill list' : 'Not on your skill list'}>
+                    {s.skill} {formatShare(s.share)}
+                  </span>
+                )
+              })}
+            </div>
+            {inPosting.some((s) => !yours.has(normalizeSkill(s.skill))) && (
+              <span className="muted small">Green ones are on your list; the rest are gaps for this job.</span>
+            )}
+          </div>
+        ) : match && state.skills.length > 0 && (
           <div className="match">
             <span className="muted small">Mentions your skills:</span>
             {match.matched.length ? (

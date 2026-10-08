@@ -84,6 +84,7 @@ export interface Settings {
   apiKey: string
   model: string
   effort: Effort
+  marketUrl: string // jobpulse report; empty turns market data off
 }
 
 export interface Goals {

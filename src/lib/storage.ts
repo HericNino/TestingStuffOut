@@ -1,6 +1,7 @@
 // The whole app state is one JSON document in localStorage. When AppState
 // changes shape, bump CURRENT_VERSION and add a step to migrate().
 
+import { DEFAULT_MARKET_URL } from './market'
 import type { AppState } from './types'
 
 export const STORAGE_KEY = 'launchpad:v1'
@@ -16,7 +17,7 @@ export function emptyState(): AppState {
     sessions: [],
     stories: [],
     goals: { weeklyApplications: 5, weeklyLearningMinutes: 300 },
-    settings: { apiKey: '', model: DEFAULT_MODEL, effort: 'medium' },
+    settings: { apiKey: '', model: DEFAULT_MODEL, effort: 'medium', marketUrl: DEFAULT_MARKET_URL },
   }
 }
 

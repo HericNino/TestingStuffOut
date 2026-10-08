@@ -812,6 +812,24 @@ textarea.input {
   cursor: default;
 }
 
+.market-share {
+  display: block;
+  font-size: 0.78rem;
+}
+.tag-gap {
+  color: var(--ochre);
+}
+.tag-gap::before,
+.market-check .tag-good::before {
+  content: '';
+}
+.market-check {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: calc(-1 * var(--s2)) 0 var(--s4);
+}
+
 /* ---------- pipeline board ---------- */
 
 .board {

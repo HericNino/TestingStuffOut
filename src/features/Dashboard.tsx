@@ -12,6 +12,8 @@ import {
 import { parseDay, relativeDay, today } from '../lib/dates'
 import { navigate } from '../lib/router'
 import { sampleState } from '../lib/sample'
+import { formatShare } from '../lib/market'
+import { useMarket } from '../lib/marketStore'
 import { useStore } from '../lib/store'
 import { STAGES } from '../lib/types'
 
@@ -36,6 +38,7 @@ export function Dashboard() {
   const isEmpty = !state.jobs.length && !state.skills.length && !state.sessions.length && !state.stories.length
   const firstName = state.profile.name.split(' ')[0]
   const lastSession = state.sessions.map((s) => s.date).sort().at(-1)
+  const { market } = useMarket()
   const date = parseDay(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
@@ -134,6 +137,7 @@ export function Dashboard() {
                   <span>{s.name}</span>
                   <span className="muted small num">
                     {s.level} of 5, aiming for {s.target}
+                    {market?.find(s.name) && `, in ${formatShare(market.find(s.name)!.share)} of postings`}
                   </span>
                 </li>
               ))}

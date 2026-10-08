@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { Field, Section } from '../components/ui'
 import { today } from '../lib/dates'
+import { DEFAULT_MARKET_URL } from '../lib/market'
+import { useMarket } from '../lib/marketStore'
 import { sampleState } from '../lib/sample'
 import { emptyState, exportState, importState } from '../lib/storage'
 import { useStore } from '../lib/store'
@@ -130,6 +132,8 @@ export function Profile() {
         </Section>
       </div>
 
+      <MarketData />
+
       <Section title="Your data">
         <p className="muted">
           Everything is kept in this browser's local storage. Export a backup now and then, or to move to another computer.
@@ -179,5 +183,65 @@ export function Profile() {
         {message && <p className="muted small">{message}</p>}
       </Section>
     </div>
+  )
+}
+
+const STATUS = {
+  off: 'Off. Leave the address empty to keep it that way.',
+  loading: 'Loading…',
+  error: "Couldn't load the report. Check the address, or try again later.",
+  ready: '',
+}
+
+function MarketData() {
+  const { state, dispatch } = useStore()
+  const { market, status, fetchedAt, refresh } = useMarket()
+  const url = state.settings.marketUrl
+  const save = (value: string) => {
+    if (value.trim() !== url) dispatch({ type: 'settings/update', settings: { marketUrl: value.trim() } })
+  }
+
+  return (
+    <Section title="Market data">
+      <p className="muted">
+        Learning and job pages compare your skills with what tech job postings ask for, using the daily report from{' '}
+        <a href="https://hericnino.github.io/jobpulse/" target="_blank" rel="noreferrer">
+          jobpulse
+        </a>
+        . Only the report is downloaded; nothing about you is sent anywhere.
+      </p>
+      <Field label="Report address" hint="Any jobpulse report.json. Clear it to turn market data off.">
+        <div className="row">
+          {/* keyed on the saved value so an import or reset shows up here */}
+          <input
+            key={url}
+            className="input grow"
+            type="url"
+            defaultValue={url}
+            onBlur={(e) => save(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && save(e.currentTarget.value)}
+            placeholder={DEFAULT_MARKET_URL}
+          />
+          {url !== DEFAULT_MARKET_URL && (
+            <button type="button" className="btn small" onClick={() => save(DEFAULT_MARKET_URL)}>
+              Default
+            </button>
+          )}
+        </div>
+      </Field>
+      <div className="row wrap">
+        <p className="muted small grow">
+          {market
+            ? `${market.active} active postings as of ${market.asOf}${fetchedAt ? `, checked ${new Date(fetchedAt).toLocaleString()}` : ''}.`
+            : STATUS[status]}
+          {market && status !== 'ready' && ` ${STATUS[status]}`}
+        </p>
+        {url && (
+          <button type="button" className="btn small" onClick={refresh} disabled={status === 'loading'}>
+            Check now
+          </button>
+        )}
+      </div>
+    </Section>
   )
 }

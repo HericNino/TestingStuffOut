@@ -155,18 +155,27 @@ export function skillGaps(skills: Skill[], limit = 5): Skill[] {
     .slice(0, limit)
 }
 
+// keep characters that matter in tech names (C++, C#, Node.js) but drop
+// sentence punctuation so "experience with React." still matches "React"
+const normalizeText = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9+#.]+/g, ' ').replace(/\.+(?=\s|$)/g, ' ')} `
+
+/** Returns a test for whether a skill name appears as a whole word in `text`. */
+export function mentionsIn(text: string): (name: string) => boolean {
+  const haystack = normalizeText(text)
+  return (name) => {
+    const needle = normalizeText(name).trim()
+    return needle !== '' && haystack.includes(` ${needle} `)
+  }
+}
+
 /** Rough keyword match between a posting and your skills, done locally. */
 export function keywordMatch(description: string, skills: Skill[]): { matched: Skill[]; missing: Skill[] } {
-  // keep characters that matter in tech names (C++, C#, Node.js) but drop
-  // sentence punctuation so "experience with React." still matches "React"
-  const normalize = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9+#.]+/g, ' ').replace(/\.+(?=\s|$)/g, ' ')} `
-  const text = normalize(description)
+  const mentions = mentionsIn(description)
   const matched: Skill[] = []
   const missing: Skill[] = []
   for (const skill of skills) {
-    const needle = normalize(skill.name).trim()
-    if (!needle) continue
-    if (text.includes(` ${needle} `)) matched.push(skill)
+    if (!normalizeText(skill.name).trim()) continue
+    if (mentions(skill.name)) matched.push(skill)
     else missing.push(skill)
   }
   return { matched, missing }

@@ -4,6 +4,8 @@ import { Dots, Empty, Field, Figure, Modal, Section } from '../components/ui'
 import { learningStreak, longestStreak, minutesBySkill, minutesThisWeek } from '../lib/analytics'
 import { formatDay, today } from '../lib/dates'
 import { uid } from '../lib/id'
+import { formatShare } from '../lib/market'
+import { useMarket } from '../lib/marketStore'
 import { useStore } from '../lib/store'
 import type { Skill } from '../lib/types'
 
@@ -18,6 +20,8 @@ export function Learn() {
   const totalMinutes = state.sessions.reduce((sum, s) => sum + s.minutes, 0)
   const skillName = new Map(state.skills.map((s) => [s.id, s.name]))
   const categories = [...new Set(state.skills.map((s) => s.category || 'Other'))].sort()
+  const { market } = useMarket()
+  const suggestions = market ? market.missing(state.skills.map((s) => s.name), 6) : []
 
   return (
     <div className="page">
@@ -94,9 +98,12 @@ export function Learn() {
                   .filter((s) => (s.category || 'Other') === cat)
                   .map((skill) => (
                     <div key={skill.id} className="skill-row">
-                      <button className="link" onClick={() => setSkillDraft(skill)}>
-                        {skill.name}
-                      </button>
+                      <span>
+                        <button className="link" onClick={() => setSkillDraft(skill)}>
+                          {skill.name}
+                        </button>
+                        {market && <MarketShare share={market.find(skill.name)?.share} />}
+                      </span>
                       <Dots
                         label="Level"
                         value={skill.level}
@@ -111,6 +118,32 @@ export function Learn() {
             ))
           )}
         </Section>
+
+        {suggestions.length > 0 && (
+          <Section title="Asked for, not on your list" aside={<span className="muted small">{marketSource(market!)}</span>}>
+            <ul className="list">
+              {suggestions.map((s) => (
+                <li key={s.skill} className="list-item">
+                  <span>
+                    {s.skill}
+                    <span className="muted small">
+                      {' '}
+                      in {formatShare(s.share)} of postings, at {s.companies} companies
+                    </span>
+                  </span>
+                  <button
+                    className="btn small"
+                    onClick={() =>
+                      dispatch({ type: 'skill/upsert', skill: { id: uid(), name: s.skill, category: s.category, level: 1, target: 3, notes: '' } })
+                    }
+                  >
+                    Add
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
 
         <Section title="Recent sessions">
           {state.sessions.length === 0 ? (
@@ -223,4 +256,16 @@ function SkillEditor({
       </form>
     </Modal>
   )
+}
+
+function MarketShare({ share }: { share: number | undefined }) {
+  return (
+    <span className="muted small market-share" title="Share of open tech postings that mention this skill (jobpulse)">
+      {share === undefined ? 'rarely asked for' : `in ${formatShare(share)} of postings`}
+    </span>
+  )
+}
+
+function marketSource(market: { active: number; asOf: string | null }): string {
+  return `${market.active} open postings${market.asOf ? `, ${market.asOf}` : ''}`
 }

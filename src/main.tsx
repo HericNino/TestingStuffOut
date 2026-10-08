@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { MarketProvider } from './lib/MarketProvider'
 import { StoreProvider } from './lib/StoreProvider'
 import '@fontsource-variable/newsreader/wght.css'
 import '@fontsource-variable/newsreader/wght-italic.css'
@@ -14,7 +15,9 @@ import './styles.css'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StoreProvider>
-      <App />
+      <MarketProvider>
+        <App />
+      </MarketProvider>
     </StoreProvider>
   </StrictMode>,
 )
